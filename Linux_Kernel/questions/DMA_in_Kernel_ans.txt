@@ -215,25 +215,25 @@ How is the DMA Engine framework used in different subsystems?
     Storage (AHCI, NVMe): Used for high-speed disk operations.
     USB: USB controllers use DMA for bulk data transfers.
 
-How does the DMA Engine handle scatter-gather transfers?
+    How does the DMA Engine handle scatter-gather transfers?
+    It chains multiple memory segments together in a descriptor list, enabling the DMA controller to transfer non-contiguous memory blocks in a single operation.
 
-It chains multiple memory segments together in a descriptor list, enabling the DMA controller to transfer non-contiguous memory blocks in a single operation.
-What is the role of struct dma_chan in DMA Engine?
+    What is the role of struct dma_chan in DMA Engine?
+    struct dma_chan represents a DMA channel and provides an interface for drivers to initiate and manage DMA transfers.
 
-struct dma_chan represents a DMA channel and provides an interface for drivers to initiate and manage DMA transfers.
 3. DMA and IOMMU (Input-Output Memory Management Unit)
 How does IOMMU affect DMA transfers?
-
-IOMMU translates device addresses into physical addresses, allowing devices to perform DMA safely without accessing restricted memory regions.
+    IOMMU translates device addresses into physical addresses, allowing devices to perform DMA safely without accessing restricted memory regions.
+    
 How does the Linux kernel manage IOMMU mappings for DMA?
+    The kernel uses functions like iommu_map() and iommu_unmap() to set up DMA mappings for devices.
 
-The kernel uses functions like iommu_map() and iommu_unmap() to set up DMA mappings for devices.
 What is dma_map_sg() and how does it relate to IOMMU?
+    dma_map_sg() maps scatter-gather lists to DMA addresses and ensures that the IOMMU properly maps them.
 
-dma_map_sg() maps scatter-gather lists to DMA addresses and ensures that the IOMMU properly maps them.
 How does the dma_ops structure interact with IOMMU?
+    The dma_ops structure provides function pointers for DMA operations, abstracting IOMMU or direct DMA mappings.
 
-The dma_ops structure provides function pointers for DMA operations, abstracting IOMMU or direct DMA mappings.
 What is the difference between direct DMA and IOMMU-mapped DMA?
 
     Direct DMA: Uses physical addresses directly.
@@ -241,28 +241,26 @@ What is the difference between direct DMA and IOMMU-mapped DMA?
 
 4. Scatter-Gather DMA and Chained Descriptors
 What is Scatter-Gather DMA?
+    Scatter-Gather DMA allows non-contiguous memory regions to be transferred efficiently in a single DMA transaction.
 
-Scatter-Gather DMA allows non-contiguous memory regions to be transferred efficiently in a single DMA transaction.
 How does the Linux kernel support Scatter-Gather DMA?
-
     dma_map_single(): Maps a single contiguous memory region.
     dma_map_sg(): Maps a list of non-contiguous memory segments for scatter-gather transfers.
 
 How does the kernel manage linked descriptors for large DMA transfers?
+    The kernel uses a chain of descriptors, each pointing to a portion of the data, allowing the DMA controller to process them sequentially.
 
-The kernel uses a chain of descriptors, each pointing to a portion of the data, allowing the DMA controller to process them sequentially.
 5. DMA for Specific Subsystems
 How does DMA work in network drivers (netdev_alloc_skb() and dma_map_single())?
+    Network drivers use DMA to transfer packets between memory and network hardware. netdev_alloc_skb() allocates memory, and dma_map_single() prepares it for DMA.
 
-Network drivers use DMA to transfer packets between memory and network hardware. netdev_alloc_skb() allocates memory, and dma_map_single() prepares it for DMA.
 How is DMA used in storage subsystems (AHCI, NVMe, etc.)?
+    Storage controllers use DMA to transfer data directly between RAM and disks, reducing CPU overhead.
 
-Storage controllers use DMA to transfer data directly between RAM and disks, reducing CPU overhead.
 How does USB use DMA for data transfers?
+    USB controllers use DMA for bulk transfers to improve performance.
 
-USB controllers use DMA for bulk transfers to improve performance.
 What are the special considerations for DMA in real-time systems?
-
     Low-latency memory access.
     Predictable DMA completion times.
     Cache coherency handling.
