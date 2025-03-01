@@ -1,0 +1,140 @@
+Interrupts in the Linux Kernel
+
+    What is an interrupt in the context of the Linux kernel?
+        An interrupt is a signal to the processor indicating that an event requiring immediate attention has occurred. It allows the CPU to temporarily pause its current task to handle a higher-priority event, such as hardware requests or system events.
+
+    How does the Linux kernel handle interrupts?
+        The kernel responds to interrupts by executing an interrupt handler (ISR - Interrupt Service Routine). The CPU acknowledges the interrupt, determines its source, and calls the appropriate ISR. After handling the interrupt, normal execution resumes.
+
+    What is the purpose of interrupt handlers in the Linux kernel?
+        Interrupt handlers (ISRs) process the interrupt event. They are designed to be fast and minimal, often deferring extensive processing to bottom-half mechanisms (tasklets, workqueues, softirqs).
+
+    Difference between hardware and software interrupts?
+        Hardware interrupts: Triggered by external hardware devices (e.g., keyboard, network interface).
+        Software interrupts: Triggered by software instructions (e.g., system calls, exceptions).
+
+    How does the Linux kernel prioritize interrupts?
+        Each interrupt has a unique IRQ (Interrupt Request) number and an associated priority level. The Interrupt Controller (APIC, GIC, etc.) prioritizes interrupts and handles conflicts.
+
+    Role of interrupt request lines (IRQs) in the Linux kernel?
+        IRQs are unique identifiers assigned to hardware interrupts. The kernel maps IRQs to their respective interrupt handlers.
+
+    How does the Linux kernel manage shared interrupts?
+        Multiple devices can share an IRQ line. The kernel manages shared interrupts by registering multiple handlers for the same IRQ and executing them sequentially when the interrupt occurs.
+
+    Process of registering an interrupt handler in the Linux kernel?
+        Use request_irq() in a device driver to associate an IRQ number with an ISR.
+
+    request_irq(irq_number, my_irq_handler, IRQF_SHARED, "my_device", dev_id);
+
+    Role of bottom halves (BHs) and tasklets in interrupt handling?
+        Since ISRs must be fast, bottom halves defer lengthy processing to execute later. Tasklets and workqueues are used for deferred processing.
+
+    Concept of deferred interrupt processing in the Linux kernel?
+        The kernel defers processing of non-critical tasks from ISRs using bottom-half mechanisms (softirqs, tasklets, workqueues).
+
+    How does the Linux kernel handle nested interrupts?
+        Some architectures support interrupt nesting, allowing higher-priority interrupts to interrupt lower-priority ISRs. The kernel ensures proper stack handling to avoid corruption.
+
+    Steps involved in handling an interrupt in the Linux kernel?
+        Device generates an interrupt → CPU receives and acknowledges it → Kernel calls the appropriate ISR → ISR completes minimal work → Bottom-half processing is scheduled (if needed) → CPU resumes execution.
+
+    Difference between top halves and bottom halves in interrupt handling?
+        Top-half: The ISR executes immediately on an interrupt but does minimal work.
+        Bottom-half: Defers time-consuming processing to later execution.
+
+    How does the Linux kernel prevent interrupt storms or thrashing?
+        Rate limiting (via NAPI for networking), disabling interrupts temporarily, watchdog timers, and priority adjustments help prevent excessive interrupts.
+
+    Potential issues from interrupt handling and their mitigations?
+        Issues include latency, race conditions, deadlocks, and priority inversion. Solutions involve locking mechanisms, deferred execution, and interrupt affinity tuning.
+
+    Interrupt affinity and how it is managed in Linux?
+        Interrupt affinity allows directing interrupts to specific CPUs using /proc/irq/IRQ_NUMBER/smp_affinity.
+
+    Purpose of disabling interrupts and how it is done in Linux?
+        Disabling prevents concurrent execution of critical sections:
+            Globally: local_irq_disable();
+            Per CPU: spin_lock_irqsave();
+
+    Difference in interrupt handling between real-time and non-real-time Linux kernels?
+        RT kernels have deterministic latency and prioritize low-latency scheduling, whereas non-RT kernels focus on throughput.
+
+    Relationship between interrupts and device drivers in Linux?
+        Device drivers register, manage, and handle interrupts using APIs like request_irq() and free_irq().
+
+    Handling shared resources within interrupt handlers?
+        Use spinlocks, atomic variables, and RCU (Read-Copy-Update) to manage shared resources safely.
+
+Bottom-Half Handling Mechanisms
+
+    Available bottom-half handling mechanisms and when to use them?
+        SoftIRQs: For high-priority tasks (networking, block I/O).
+        Tasklets: When execution order is not strict.
+        Workqueues: For tasks requiring process context.
+
+    Where to get IRQ number in request_irq()?
+        From device datasheets or using cat /proc/interrupts.
+
+    Static vs dynamic initialization of workqueues?
+        Static: DECLARE_WORK(my_work, work_handler);
+        Dynamic: alloc_workqueue("queue_name", WQ_UNBOUND, 0);
+
+    Tasklet vs Softirq – When to use which?
+        Tasklets are built on softIRQs but can be scheduled multiple times. Use softIRQs for high-frequency tasks and tasklets for driver-specific bottom halves.
+
+    Registering an interrupt handler in a device driver?
+        request_irq(irq, handler, flags, name, dev);
+
+    Handling a shared interrupt in a driver?
+        Use IRQF_SHARED flag and properly check device status inside ISR.
+
+    Enabling and disabling interrupts in driver initialization/cleanup?
+        Enable in probe(), disable in remove().
+
+    Handling nested interrupts in a driver?
+        Avoid them by using locking mechanisms and priority adjustments.
+
+    Ensuring atomic execution in interrupt handling?
+        Use spinlocks and disable interrupts during critical sections.
+
+    Handling an interrupt while the handler is already executing?
+        Use interrupt disable mechanisms or nesting controls.
+
+    Synchronizing shared data between ISR and driver?
+        Use spinlocks, atomic variables, or workqueues.
+
+    Prioritizing interrupts from different devices?
+        Handled by the interrupt controller (GIC, APIC).
+
+    Handling interrupt storms in a device driver?
+        Use NAPI, rate limiting, and masking mechanisms.
+
+    Measuring interrupt latency?
+        Use ftrace, latencytop, or kernel timestamping.
+
+    Handling spurious interrupts?
+        Ignore them using device status checks in the ISR.
+
+    Handling errors in an interrupt handler?
+        Log them and take corrective action (e.g., reset the device).
+
+    Handling interrupt sharing conflicts?
+        Ensure proper device identification in shared IRQ handlers.
+
+    Implementing interrupt coalescing or batching?
+        Aggregate multiple events before processing.
+
+    Optimizing interrupt handling performance?
+        Use deferred processing, polling mechanisms, and efficient locking.
+
+    Tasklets vs workqueues vs softirqs in bottom-half handling?
+        Use tasklets for low-latency tasks, workqueues for process-context work, and softIRQs for high-priority processing.
+
+41-56. Detailed execution of bottom halves and practical scenarios
+- Bottom halves defer work that ISRs should not handle directly, optimizing kernel responsiveness.
+
+    Difference between process context and interrupt context?
+        Process context: Can sleep, execute blocking operations.
+        Interrupt context: Cannot sleep, must execute quickly.
+        Workqueues run in process context; tasklets and softIRQs run in interrupt context.
